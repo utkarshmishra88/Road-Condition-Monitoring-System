@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - Road Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        .left-panel { flex: 1; background: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1566243059-805d76d8b94f?ixlib=rb-1.2.1'); background-size: cover; color: white; display: flex; flex-direction: column; justify-content: center; padding: 60px; }
+        .right-panel { flex: 1; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; padding: 20px; overflow-y: auto; }
+        .card { background: white; padding: 40px; width: 100%; max-width: 450px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
+        button { width: 100%; padding: 14px; background: #ff5722; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .link { margin-top: 20px; display: block; font-size: 14px; text-align: center; color: #64748b; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="left-panel">
+    <h1>Create <br><span style="color:#ff5722">Account</span></h1>
+    <p>Join the next generation of infrastructure management.</p>
+</div>
+
+<div class="right-panel">
+    <div class="card">
+        <h2 style="text-align:center; color:#333;">Sign Up</h2>
+
+        <form id="regForm">
+            <input type="text" id="fullName" required placeholder="Full Name">
+            <div style="display:flex; gap:10px;">
+                <input type="date" id="dob" required>
+                <input type="text" id="nativePlace" required placeholder="City">
+            </div>
+            <input type="number" id="aadharNumber" required placeholder="Aadhar Number">
+            <input type="number" id="phoneNumber" required placeholder="Phone Number (Login ID)">
+            <input type="password" id="password" required placeholder="Password">
+
+            <button type="submit">Create Account</button>
+        </form>
+
+        <a href="/login.html" class="link">Already have an account? <b>Sign In</b></a>
+    </div>
+</div>
+
+<script>
+    // 1. Google Pre-fill Logic
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('token')) {
+        document.getElementById('fullName').value = params.get('name');
+        document.getElementById('phoneNumber').value = params.get('email');
+        document.getElementById('password').value = "GooglePass123";
+        alert("✅ Google Verified! Please click Create Account.");
+    }
+
+    // 2. Submit Logic
+    document.getElementById('regForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const user = {
+            fullName: document.getElementById('fullName').value,
+            dob: document.getElementById('dob').value,
+            nativePlace: document.getElementById('nativePlace').value,
+            aadharNumber: document.getElementById('aadharNumber').value,
+            phoneNumber: document.getElementById('phoneNumber').value,
+            password: document.getElementById('password').value
+        };
+
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(user)
+            });
+            const text = await response.text();
+
+            if(text.includes("Success")) {
+                alert("🎉 Success! Redirecting to Login...");
+                window.location.href = "/login.html";
+            } else {
+                alert("⚠️ " + text);
+            }
+        } catch (err) {
+            alert("❌ Server Connection Failed");
+        }
+    });
+</script>
+
+</body>
+</html>

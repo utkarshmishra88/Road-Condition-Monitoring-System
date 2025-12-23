@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Monitor - Smarter Infrastructure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- LIGHT THEME STYLES --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; color: #333; line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+        section { padding: 80px 20px; }
+        .container { max-width: 1200px; margin: auto; }
+        h2 { font-size: 2.5rem; margin-bottom: 20px; color: #ff5722; text-align: center; }
+
+        /* Buttons */
+        .btn {
+            display: inline-block; padding: 12px 30px; border-radius: 30px; font-weight: 600;
+            transition: 0.3s; cursor: pointer; border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #ff5722, #ff9f43); color: white;
+            box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(255, 87, 34, 0.5); }
+        .btn-outline {
+            border: 2px solid #ff5722; color: #ff5722; background: transparent;
+        }
+        .btn-outline:hover { background: #ff5722; color: white; }
+
+        /* --- NAVBAR (Light) --- */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 50px; position: fixed; width: 100%; top: 0; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .logo { font-size: 1.8rem; font-weight: 700; color: #333; }
+        .logo span { color: #ff5722; }
+        .nav-links { list-style: none; display: flex; gap: 30px; align-items: center; }
+        .nav-links a { font-weight: 600; color: #555; transition: 0.3s; }
+        .nav-links a:hover { color: #ff5722; }
+
+        /* --- HERO SECTION --- */
+        #home {
+            height: 100vh; display: flex; align-items: center; text-align: center;
+            /* Light Overlay */
+            background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('https://images.unsplash.com/photo-1519501025264-65ba15a82390?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover; background-position: center; padding-top: 80px;
+        }
+        .hero-content h1 { font-size: 4rem; margin-bottom: 20px; line-height: 1.2; color: #1e293b; }
+        .hero-content h1 span { color: #ff5722; }
+        .hero-content p { font-size: 1.2rem; max-width: 700px; margin: 0 auto 40px; color: #555; }
+        .hero-buttons { display: flex; gap: 20px; justify-content: center; }
+
+        /* --- FEATURES --- */
+        #about { background: #ffffff; }
+        .about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 50px; }
+        .feature-card {
+            background: #f8f9fa; padding: 30px; border-radius: 15px; text-align: center;
+            transition: 0.3s; border: 1px solid #eee; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .feature-card:hover { transform: translateY(-10px); border-color: #ff5722; }
+        .feature-icon { font-size: 3rem; color: #ff5722; margin-bottom: 20px; }
+        .feature-card h3 { margin-bottom: 15px; color: #333; }
+
+        /* --- CONTACT --- */
+        #contact { background: #f1f5f9; }
+        .contact-container { display: flex; flex-wrap: wrap; gap: 50px; margin-top: 50px; }
+        .contact-info, .contact-form { flex: 1; min-width: 300px; }
+
+        .contact-item { display: flex; align-items: center; margin-bottom: 20px; }
+        .contact-item i { font-size: 1.5rem; color: #ff5722; margin-right: 15px; width: 30px; text-align: center; }
+        .contact-item p { font-size: 1.1rem; color: #333; margin: 0; }
+
+        .contact-form input, .contact-form textarea {
+            width: 100%; padding: 15px; margin-bottom: 20px; background: #ffffff;
+            border: 1px solid #ddd; color: #333; border-radius: 8px; font-family: inherit;
+        }
+        .contact-form input:focus, .contact-form textarea:focus { outline: none; border-color: #ff5722; box-shadow: 0 0 5px rgba(255, 87, 34, 0.2); }
+
+        /* --- FOOTER --- */
+        footer { background: #1e293b; padding: 30px; text-align: center; color: #94a3b8; }
+        .social-links { margin-bottom: 20px; }
+        .social-links a { font-size: 1.5rem; margin: 0 10px; transition: 0.3s; color: #cbd5e1; }
+        .social-links a:hover { color: #ff5722; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">Road<span>Monitor</span>.</div>
+    <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About Us</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="/login.html" class="btn btn-primary">Get Started</a></li>
+    </ul>
+</nav>
+
+<section id="home">
+    <div class="container hero-content">
+        <h1>Smart <br> <span>Road Condition</span> Monitoring</h1>
+        <p>Transforming infrastructure management with community-driven reporting, real-time tracking, and advanced analytics for safer, smarter cities.</p>
+        <div class="hero-buttons">
+            <a href="/login.html" class="btn btn-primary">Report an Issue</a>
+            <a href="#about" class="btn btn-outline">Learn More</a>
+        </div>
+    </div>
+</section>
+
+<section id="about">
+    <div class="container">
+        <h2>Why Choose Road Monitor?</h2>
+        <p style="text-align: center; max-width: 800px; margin: auto; color: #666;">We bridge the gap between citizens and authorities. Our platform empowers you to report road hazards instantly, ensuring faster resolution and better infrastructure for everyone.</p>
+        <div class="about-grid">
+            <div class="feature-card">
+                <i class="fas fa-map-marker-alt feature-icon"></i>
+                <h3>Precise GPS Tagging</h3>
+                <p>Pinpoint the exact location of potholes and hazards with high-accuracy geolocation for faster identification.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-camera feature-icon"></i>
+                <h3>Image Verification</h3>
+                <p>Upload clear photos of the issue, providing authorities with visual proof to assess severity and prioritize repairs.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-tachometer-alt feature-icon"></i>
+                <h3>Authority Dashboard</h3>
+                <p>A centralized control center for officials to monitor, track, and manage reported issues in real-time.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-chart-line feature-icon"></i>
+                <h3>Advanced Analytics</h3>
+                <p>Data-driven insights to help city planners prioritize maintenance and predict future infrastructure needs.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="contact">
+    <div class="container">
+        <h2>Get In Touch</h2>
+        <div class="contact-container">
+            <div class="contact-info">
+                <h3>Contact Information</h3>
+                <p style="margin-bottom: 30px; color: #666;">Have questions, feedback, or want to partner with us? Reach out to our team, and we'll get back to you shortly.</p>
+
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <p>utkarshmishra8871@gmail.com</p>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <p>+91 88714 20473</p>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <p>Ajanta Complex, Indrapuri Sector C, Bhopal</p>
+                </div>
+            </div>
+
+            <form class="contact-form">
+                <h3>Send a Message</h3>
+                <input type="text" placeholder="Your Name" required>
+                <input type="email" placeholder="Your Email" required>
+                <textarea rows="5" placeholder="Your Message" required></textarea>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Send Message</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <div class="social-links">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+        </div>
+        <p>&copy; 2025 Road Monitor. All rights reserved.</p>
+    </div>
+</footer>
+
+<script>
+    document.querySelector('.contact-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const inputs = e.target.querySelectorAll('input, textarea');
+        const data = {
+            name: inputs[0].value,
+            email: inputs[1].value,
+            message: inputs[2].value
+        };
+
+        try {
+            // Sending data to the public API
+            const res = await fetch('/api/issues/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if(res.ok) {
+                alert('✅ Message sent successfully! Admin will contact you.');
+                e.target.reset();
+            } else {
+                alert('❌ Error sending message.');
+            }
+        } catch(err) {
+            console.error(err);
+            alert('❌ Connection Error. Is the Backend running?');
+        }
+    });
+
+    // Smooth Scrolling for navigation
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
