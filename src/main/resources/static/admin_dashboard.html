@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; color: #333; padding: 20px; }
+        .header { background: white; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ff5722; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .logout-btn { background: #ef4444; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
+        .tab-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: white; border: none; border-radius: 20px; cursor: pointer; font-weight: 600; color: #666; transition: 0.3s; }
+        .tab.active { background: #ff5722; color: white; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.3); }
+        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: none; }
+        .container.active { display: block; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9fa; color: #ff5722; padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+
+        .progress-bg { background: #e9ecef; border-radius: 10px; height: 10px; width: 120px; margin-top: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 10px; }
+        .prog-25 { width: 25%; background: #dc3545; }
+        .prog-50 { width: 50%; background: #ffc107; }
+        .prog-75 { width: 75%; background: #17a2b8; }
+        .prog-100 { width: 100%; background: #28a745; }
+
+        .btn-action { padding: 5px 10px; border-radius: 5px; border: none; color: white; cursor: pointer; font-size: 12px; }
+        .btn-delete { border:1px solid #ef4444; background:transparent; color:#ef4444; padding:5px; border-radius:5px; cursor:pointer; }
+        .btn-delete:hover { background:#ef4444; color:white; }
+
+        /* Image Link Style */
+        .photo-link { color: #007bff; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; }
+        .photo-link:hover { text-decoration: underline; }
+
+        #adminMap { height: 500px; width: 100%; border-radius: 10px; border: 2px solid #ddd; }
+        .restricted { display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2 id="pageTitle">👮 Admin Command Center</h2>
+    <form action="/logout" method="post"><button class="logout-btn" type="submit">Logout</button></form>
+</div>
+
+<div class="tab-container">
+    <button class="tab active" onclick="showTab('issues')">🚨 Hazards</button>
+    <button class="tab" onclick="showTab('liveMap')">🗺️ Live Map</button>
+    <button class="tab restricted" onclick="showTab('manageAdmins')">👮 Manage Admins</button>
+    <button class="tab restricted" onclick="showTab('users')">👥 Manage Users</button>
+    <button class="tab restricted" onclick="showTab('messages')">📩 Messages</button>
+    <button class="tab restricted" onclick="showTab('admins')">➕ Add Admin</button>
+    <button class="tab" onclick="showTab('notifs')">🔔 Alerts</button>
+</div>
+
+<div id="issues" class="container active">
+    <h3>Work Progress & Tasks</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Description</th>
+            <th>Photo</th> <th>Progress</th>
+            <th>Map</th>
+            <th>Reporter</th>
+            <th>Action Flow</th>
+            <th>Delete</th>
+        </tr>
+        </thead>
+        <tbody id="issueBody"></tbody>
+    </table>
+</div>
+
+<div id="liveMap" class="container"><div id="adminMap"></div></div>
+
+<div id="manageAdmins" class="container">
+    <h3>Manage Field Engineers</h3>
+    <button onclick="loadManageAdmins()">Refresh</button>
+    <table><thead><tr><th>Name</th><th>Phone</th><th>Action</th></tr></thead><tbody id="manageAdminsBody"></tbody></table>
+</div>
+
+<div id="users" class="container">
+    <h3>Manage Citizens</h3>
+    <button onclick="loadUsers()">Refresh</button>
+    <table><thead><tr><th>Name</th><th>Phone</th><th>Action</th></tr></thead><tbody id="userBody"></tbody></table>
+</div>
+
+<div id="messages" class="container"><table><thead><tr><th>Name</th><th>Message</th><th>Action</th></tr></thead><tbody id="msgBody"></tbody></table></div>
+
+<div id="admins" class="container">
+    <h3>Create Field Engineer Account</h3>
+    <form id="adminForm" style="max-width: 400px;">
+        <input type="text" id="admName" required placeholder="Full Name" style="width:100%; padding:10px; margin-bottom:10px;">
+        <input type="number" id="admPhone" required placeholder="Phone Number" style="width:100%; padding:10px; margin-bottom:10px;">
+        <input type="password" id="admPass" required placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px;">
+        <button type="submit" style="width:100%; padding:10px; background:#ff5722; color:white; border:none; border-radius:5px;">Create Account</button>
+    </form>
+</div>
+
+<div id="notifs" class="container"><ul id="notifList"></ul></div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    var map, currentUser = "";
+
+    async function init() {
+        var res = await fetch('/api/whoami');
+        var username = await res.text();
+
+        if (username === 'admin') {
+            currentUser = "MAIN";
+        } else {
+            currentUser = "SUB";
+            document.querySelectorAll('.restricted').forEach(el => el.style.display = 'none');
+            document.getElementById('pageTitle').innerText = "👷 Field Engineer Dashboard";
+        }
+
+        map = L.map('adminMap').setView([20.5937, 78.9629], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        loadIssues();
+    }
+
+    function showTab(id) {
+        document.querySelectorAll('.container').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+
+        if(id === 'issues') loadIssues();
+        if(id === 'liveMap') { setTimeout(() => map.invalidateSize(), 200); loadMapPins(); }
+        if(id === 'manageAdmins' && currentUser === "MAIN") loadManageAdmins();
+        if(id === 'users' && currentUser === "MAIN") loadUsers();
+        if(id === 'messages' && currentUser === "MAIN") loadMessages();
+        if(id === 'notifs') loadNotifs();
+    }
+
+    function getProgressBar(status) {
+        let pct = 25; let cls = "prog-25";
+        if(status === 'ASSIGNED') { pct = 50; cls = "prog-50"; }
+        if(status === 'VERIFIED') { pct = 75; cls = "prog-75"; }
+        if(status === 'RESOLVED') { pct = 100; cls = "prog-100"; }
+        return `<div style="font-size:11px; font-weight:bold; margin-bottom:2px;">${status} (${pct}%)</div><div class="progress-bg"><div class="progress-fill ${cls}"></div></div>`;
+    }
+
+    async function loadIssues() {
+        var res = await fetch('/api/issues'); var data = await res.json();
+        var tbody = document.getElementById('issueBody'); tbody.innerHTML = "";
+
+        data.forEach(i => {
+            // --- IMAGE LINK LOGIC ---
+            // Agar image URL hai to Link dikhao, nahi to 'No Image'
+            var photoHtml = i.imageUrl
+                ? `<a href="/uploads/${i.imageUrl}" target="_blank" class="photo-link">📸 View Photo</a>`
+                : `<span style="color:#999">No Image</span>`;
+
+            var btn = '';
+            // ACTION FLOW LOGIC
+            if (currentUser === "MAIN") {
+                if(i.status === 'PENDING') btn = `<button class="btn-action" style="background:#007bff" onclick="assignTask(${i.id})">Assign</button>`;
+                else if(i.status === 'ASSIGNED') btn = `<small style="color:orange">Assigned: ${i.assignedTo}</small>`;
+                else if(i.status === 'VERIFIED') btn = `<button class="btn-action" style="background:#22c55e" onclick="markResolved(${i.id})">Approve & Resolve</button>`;
+                else btn = '✔ Closed';
+            } else {
+                if(i.status === 'ASSIGNED') btn = `<button class="btn-action" style="background:#17a2b8" onclick="verifyTask(${i.id})">Verify Work</button>`;
+                else if(i.status === 'VERIFIED') btn = `<span style="color:green">Waiting Approval</span>`;
+                else btn = '✔ Done';
+            }
+
+            var delBtn = currentUser === "MAIN" ? `<button class="btn-delete" onclick="deleteReport(${i.id})">🗑</button>` : '-';
+
+            // ADDED ${photoHtml} in the row
+            tbody.innerHTML += `<tr>
+                <td>#${i.id}</td>
+                <td>${i.description}</td>
+                <td>${photoHtml}</td>
+                <td>${getProgressBar(i.status)}</td>
+                <td><a href="https://www.google.com/maps?q=$${i.latitude},${i.longitude}" target="_blank">Map</a></td>
+                <td>${i.reporterPhone||'Unknown'}</td>
+                <td>${btn}</td>
+                <td>${delBtn}</td>
+            </tr>`;
+        });
+    }
+
+    async function assignTask(id) { var p = prompt("Enter Field Engineer Phone:"); if(p) { await fetch(`/api/issues/${id}/assign?adminPhone=${p}`, { method: 'PUT' }); loadIssues(); } }
+    async function verifyTask(id) { if(confirm("Verified on site?")) { await fetch(`/api/issues/${id}/verify`, { method: 'PUT' }); loadIssues(); } }
+    async function markResolved(id) { if(confirm("Close Case & Notify User?")) { await fetch(`/api/issues/${id}/status?status=RESOLVED`, { method: 'PUT' }); loadIssues(); } }
+    async function deleteReport(id) { if(confirm("Delete Report Permanently?")) { await fetch(`/api/issues/${id}`, { method: 'DELETE' }); loadIssues(); } }
+
+    async function loadMapPins() { var res = await fetch('/api/issues'); var data = await res.json(); data.forEach(i => L.marker([i.latitude, i.longitude]).addTo(map).bindPopup(`<b>${i.status}</b><br>${i.description}`)); }
+    async function loadUsers() { var res = await fetch('/api/admin/users'); var data = await res.json(); document.getElementById('userBody').innerHTML = data.map(u => `<tr><td>${u.fullName}</td><td>${u.phoneNumber}</td><td><button style="color:red; cursor:pointer;" onclick="deleteUser(${u.id})">Delete</button></td></tr>`).join(''); }
+    async function loadManageAdmins() { var res = await fetch('/api/admin/list-admins'); var data = await res.json(); document.getElementById('manageAdminsBody').innerHTML = data.map(u => `<tr><td>${u.fullName}</td><td>${u.phoneNumber}</td><td><button style="color:red; cursor:pointer;" onclick="deleteUser(${u.id})">Delete</button></td></tr>`).join(''); }
+    async function deleteUser(id) { if(confirm("Delete User & All Data?")) await fetch(`/api/admin/users/${id}`, { method: 'DELETE' }); loadUsers(); loadManageAdmins(); }
+    async function loadMessages() { var res = await fetch('/api/issues/messages'); var data = await res.json(); document.getElementById('msgBody').innerHTML = data.map(m => `<tr><td>${m.name}</td><td>${m.message}</td><td><button class="btn-delete" onclick="deleteMessage(${m.id})">X</button></td></tr>`).join(''); }
+    async function deleteMessage(id) { if(confirm("Delete?")) { await fetch(`/api/issues/messages/${id}`, { method: 'DELETE' }); loadMessages(); } }
+    async function loadNotifs() { var res = await fetch('/api/issues/notifications'); var data = await res.json(); document.getElementById('notifList').innerHTML = data.map(n => `<li>${n.message}</li>`).join(''); }
+
+    document.getElementById('adminForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newAdmin = { fullName: document.getElementById('admName').value, phoneNumber: document.getElementById('admPhone').value, password: document.getElementById('admPass').value, dob: "2000-01-01", nativePlace: "HQ", aadharNumber: "000000000000" };
+        await fetch('/api/admin/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newAdmin) });
+        alert("Field Engineer Created!"); e.target.reset();
+    });
+
+    init();
+</script>
+</body>
+</html>

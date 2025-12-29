@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 15px 30px; border-radius: 12px; margin-bottom: 30px; }
+        .btn-logout { background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 8px 20px; border-radius: 20px; cursor: pointer; }
+
+        .tab-container { display: flex; justify-content: center; margin-bottom: 25px; gap: 20px; }
+        .tab { background: #ffffff; color: #666; padding: 12px 30px; border: none; border-radius: 30px; cursor: pointer; transition: 0.3s; }
+        .tab.active { background: linear-gradient(45deg, #ff5722, #f97316); color: white; }
+
+        .box { background: #ffffff; padding: 30px; border-radius: 15px; max-width: 800px; margin: auto; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        #map { height: 350px; border-radius: 10px; border: 2px solid #ddd; margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 12px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px; }
+        .btn-action { width: 100%; padding: 14px; margin-top: 20px; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f8f9fa; color: #ff5722; padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+
+        /* PROGRESS BAR STYLES */
+        .progress-bg { background: #e9ecef; border-radius: 10px; height: 10px; width: 100%; margin-top: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 10px; transition: width 0.5s ease-in-out; }
+        .prog-25 { width: 25%; background: #dc3545; } /* Red */
+        .prog-50 { width: 50%; background: #ffc107; } /* Yellow */
+        .prog-75 { width: 75%; background: #17a2b8; } /* Blue */
+        .prog-100 { width: 100%; background: #28a745; } /* Green */
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2>🚧 Road Monitor Dashboard</h2>
+    <form action="/logout" method="post"><button class="btn-logout" type="submit">Logout</button></form>
+</div>
+
+<div class="tab-container">
+    <button class="tab active" onclick="switchTab('new')">➕ New Report</button>
+    <button class="tab" onclick="switchTab('history')">🕒 History & Status</button>
+    <button class="tab" onclick="switchTab('notifs')">🔔 Notifications</button>
+</div>
+
+<div id="newReportSection" class="content-section active">
+    <div class="box">
+        <div id="map"></div>
+        <button type="button" class="btn-action" style="background:#0ea5e9" onclick="getLocation()">📍 Get Location</button>
+        <p id="locStatus" style="text-align:center; color:#666; margin-top:10px;">Waiting...</p>
+        <form id="reportForm">
+            <textarea id="desc" rows="3" required placeholder="Description"></textarea>
+            <input type="file" id="img" accept="image/*" required>
+            <input type="hidden" id="lat"><input type="hidden" id="lng">
+            <button type="submit" class="btn-action" style="background:#22c55e">🚀 Submit</button>
+        </form>
+    </div>
+</div>
+
+<div id="historySection" class="content-section">
+    <div class="box">
+        <h3>Your Submissions</h3>
+        <button onclick="loadHistory()" style="margin-bottom:15px; padding:5px 10px;">Refresh</button>
+        <table><thead><tr><th>Date</th><th>Issue</th><th>Work Progress</th></tr></thead><tbody id="historyTableBody"></tbody></table>
+    </div>
+</div>
+
+<div id="notifSection" class="content-section">
+    <div class="box">
+        <h3>Your Alerts</h3>
+        <button onclick="loadNotifs()" style="margin-bottom:15px; padding:5px 10px;">Refresh</button>
+        <ul id="notifList" style="list-style: none; padding: 0;"></ul>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map').setView([20.5937, 78.9629], 5); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); var marker;
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        if(tabName === 'new') { document.getElementById('newReportSection').classList.add('active'); document.querySelector('.tab:nth-child(1)').classList.add('active'); setTimeout(() => map.invalidateSize(), 200); }
+        else if(tabName === 'history') { document.getElementById('historySection').classList.add('active'); document.querySelector('.tab:nth-child(2)').classList.add('active'); loadHistory(); }
+        else { document.getElementById('notifSection').classList.add('active'); document.querySelector('.tab:nth-child(3)').classList.add('active'); loadNotifs(); }
+    }
+
+    function getLocation() { navigator.geolocation.getCurrentPosition(pos => { var lat = pos.coords.latitude; var lng = pos.coords.longitude; document.getElementById('lat').value = lat; document.getElementById('lng').value = lng; document.getElementById('locStatus').innerText = "Locked: " + lat + ", " + lng; if(marker) map.removeLayer(marker); map.setView([lat, lng], 15); marker = L.marker([lat, lng]).addTo(map); }); }
+
+    document.getElementById('reportForm').addEventListener('submit', async (e) => { e.preventDefault(); var fd = new FormData(); fd.append('description', document.getElementById('desc').value); fd.append('latitude', document.getElementById('lat').value); fd.append('longitude', document.getElementById('lng').value); fd.append('image', document.getElementById('img').files[0]); await fetch('/api/issues', { method: 'POST', body: fd }); alert("Report Submitted!"); switchTab('history'); });
+
+    // --- WORK PROGRESS LOGIC ---
+    function getProgressBar(status) {
+        let pct = 25; let label = "Reported"; let cls = "prog-25";
+        if(status === 'ASSIGNED') { pct = 50; label = "Processing"; cls = "prog-50"; }
+        if(status === 'VERIFIED') { pct = 75; label = "Verifying"; cls = "prog-75"; }
+        if(status === 'RESOLVED') { pct = 100; label = "Completed"; cls = "prog-100"; }
+
+        return `
+            <div style="font-size:12px; font-weight:bold; display:flex; justify-content:space-between;">
+                <span>${status}</span> <span>${pct}%</span>
+            </div>
+            <div class="progress-bg"><div class="progress-fill ${cls}"></div></div>
+        `;
+    }
+
+    async function loadHistory() {
+        var res = await fetch('/api/issues/my-history');
+        var data = await res.json();
+        document.getElementById('historyTableBody').innerHTML = data.map(i => `
+            <tr>
+                <td>${new Date(i.reportedAt).toLocaleDateString()}</td>
+                <td>${i.description}</td>
+                <td>${getProgressBar(i.status)}</td>
+            </tr>
+        `).join('');
+    }
+
+    async function loadNotifs() { var res = await fetch('/api/issues/notifications'); var data = await res.json(); document.getElementById('notifList').innerHTML = data.map(n => `<li style="padding:10px; border-bottom:1px solid #eee;">${n.message} <small>${n.createdAt}</small></li>`).join(''); }
+</script>
+</body>
+</html>
